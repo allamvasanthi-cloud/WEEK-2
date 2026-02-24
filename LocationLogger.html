@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Location Logger</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin-top: 40px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .card {
+            background: #f2f2f2;
+            margin: 10px auto;
+            padding: 10px;
+            width: 300px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Location-Based Logger</h2>
+
+<button onclick="getLocation()">Get My Location</button>
+
+<h3>Current Location</h3>
+<p id="output">Click the button to fetch location</p>
+
+<h3>Location History (Last 5)</h3>
+<div id="history"></div>
+
+<script>
+// Run when page loads
+window.onload = displayHistory;
+
+function getLocation() {
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        showPosition,
+        showError,
+        {
+            timeout: 5000,
+            enableHighAccuracy: true
+        }
+    );
+}
+
+// Success Callback
+function showPosition(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    document.getElementById("output").innerHTML =
+        `Latitude: ${lat}<br>Longitude: ${lon}`;
+
+    saveLocation(lat, lon);
+    displayHistory();
+}
+
+// Save to localStorage (Last 5 only)
+function saveLocation(lat, lon) {
+    let history = JSON.parse(localStorage.getItem("locations")) || [];
+
+    history.unshift({
+        latitude: lat,
+        longitude: lon,
+        time: new Date().toLocaleString()
+    });
+
+    // Keep only last 5
+    history = history.slice(0, 5);
+
+    localStorage.setItem("locations", JSON.stringify(history));
+}
+
+// Show history
+function displayHistory() {
+    const historyDiv = document.getElementById("history");
+    const history = JSON.parse(localStorage.getItem("locations")) || [];
+
+    historyDiv.innerHTML = "";
+
+    if (history.length === 0) {
+        historyDiv.innerHTML = "No location history yet.";
+        return;
+    }
+
+    history.forEach(loc => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <strong>${loc.time}</strong><br>
+            Lat: ${loc.latitude}<br>
+            Lon: ${loc.longitude}
+        `;
+        historyDiv.appendChild(card);
+    });
+}
+
+// Error Callback
+function showError(error) {
+    let message = "";
+
+    switch (error.code) {
+        case error.PERMISSION_DENIED:
+            message = " Permission denied by user.";
+            break;
+        case error.POSITION_UNAVAILABLE:
+            message = " Location unavailable.";
+            break;
+        case error.TIMEOUT:
+            message = " Request timed out.";
+            break;
+        default:
+            message = "Unknown error occurred.";
+    }
+
+    document.getElementById("output").innerText = message;
+}
+</script>
+
+</body>
+</html>
